@@ -18,19 +18,20 @@ import sublime, sublime_plugin
 import re 
 
 
-re_quotes = re.compile("^(['\"])(.*)\\1$")
+re_quotes = re.compile("^([\"])(.*)\\1$")
+
+re_singlequotes = re.compile("^(['])(.*)\\1$")
 
 class MultiQuotesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
 
         # Check for quotes
         v = self.view
-
+        print("run")
         # Get current selection 
         (r,c) = self.view.rowcol(self.view.sel()[0].begin())
 
-        # Get end of cursor position
-        cursorPos = self.view.sel()[0].end()
+        a = 0
 
         if v.sel()[0].size() == 0:
             v.run_command("expand_selection", {"to": "scope"})
@@ -38,26 +39,41 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
         for sel in v.sel():
             text = v.substr(sel)
             res = re_quotes.match(text)
+            if res:
+                # Double Quotes
+                print("Double Quotes")
+                a = 1
+                continue         
             if not res:
-                # The current selection has no quotes
-                # De-Select
-                
-                t = self.view.text_point(r,c);
-                self.view.sel().clear()
-                self.view.sel().add(sublime.Region(t))
-                self.view.show(t)
+                for sel in v.sel():
+                    text = v.substr(sel)
+                    res = re_singlequotes.match(text)
+                    if res:
+                        # Single Quotes
+                        a = 0
+                        print("is a single quote")
+                        continue
+                    if not res:
+                        return
 
-                return
-
+        # Get end of cursor position
+        cursorPos = self.view.sel()[0].end()
         
         for region in self.view.sel():
             
             # Get the line
             line = self.view.line(region) 
 
-            # Add the +
-            line_contents = ' ' + '+' '\n'
-            self.view.insert(edit, cursorPos+1, line_contents)
+            # Add a newline inside the quote
+            newline = '\\' + "n"
+            self.view.insert(edit, cursorPos-1, newline)
+
+
+            # Add the + and newline
+            cursorPos = self.view.sel()[0].end()
+            line_contents = ' ' + '+' + '\n'
+            self.view.insert(edit, cursorPos, line_contents)
+
 
             # Get line numbers and white space
             (row,col) = self.view.rowcol(line.begin())
@@ -73,12 +89,16 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
             self.view.sel().add(sublime.Region(target))
             self.view.show(target)
 
+            # Insert the white space
+            self.view.insert(edit, target, indent)
 
             # Insert the quotes
-            self.view.insert(edit, target, indent)
-            line_conts = '"' + '"'
-            self.view.insert(edit, self.view.sel()[0].begin(), line_conts)
-
+            if a:
+                line_conts = '"' + '"'
+                self.view.insert(edit, self.view.sel()[0].begin(), line_conts)
+            if not a:
+                line_conts = '\'' + '\''
+                self.view.insert(edit, self.view.sel()[0].begin(), line_conts)                
 
             # Move cursor inside quotes
             (row,col) = self.view.rowcol(self.view.sel()[0].begin())
@@ -86,4 +106,3 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
             self.view.sel().clear()
             self.view.sel().add(sublime.Region(target))
             self.view.show(target)
-
