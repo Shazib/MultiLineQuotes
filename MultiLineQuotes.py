@@ -29,6 +29,9 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
         # Get current selection 
         (r,c) = self.view.rowcol(self.view.sel()[0].begin())
 
+        # Get end of cursor position
+        cursorPos = self.view.sel()[0].end()
+
         if v.sel()[0].size() == 0:
             v.run_command("expand_selection", {"to": "scope"})
 
@@ -53,8 +56,8 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
             line = self.view.line(region) 
 
             # Add the +
-            line_contents = ' ' + '+' 
-            self.view.insert(edit, line.end(), line_contents)
+            line_contents = ' ' + '+' '\n'
+            self.view.insert(edit, cursorPos+1, line_contents)
 
             # Get line numbers and white space
             (row,col) = self.view.rowcol(line.begin())
