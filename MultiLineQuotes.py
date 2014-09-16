@@ -1,6 +1,7 @@
 """
 import sublime, sublime_plugin
 
+
 class DuplicateLineCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         for region in self.view.sel():
@@ -13,20 +14,49 @@ class DuplicateLineCommand(sublime_plugin.TextCommand):
 """
 
 import sublime, sublime_plugin
+
+import re 
+
+
+re_quotes = re.compile("^(['\"])(.*)\\1$")
+
 class MultiQuotesCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        # Get Current Selection
-      for region in self.view.sel():
-        # If selection is empty, i.e. cursor is on a line with nothing selected
-        if region.empty(): 
+
+        # Check for quotes
+        v = self.view
+
+        # Get current selection 
+        (r,c) = self.view.rowcol(self.view.sel()[0].begin())
+
+        if v.sel()[0].size() == 0:
+            v.run_command("expand_selection", {"to": "scope"})
+
+        for sel in v.sel():
+            text = v.substr(sel)
+            res = re_quotes.match(text)
+            if not res:
+                # The current selection has no quotes
+                # De-Select
+                
+                t = self.view.text_point(r,c);
+                self.view.sel().clear()
+                self.view.sel().add(sublime.Region(t))
+                self.view.show(t)
+
+                return
+
+        
+        for region in self.view.sel():
+            
             # Get the line
             line = self.view.line(region) 
 
-            # add the +
+            # Add the +
             line_contents = ' ' + '+' 
             self.view.insert(edit, line.end(), line_contents)
 
-            #get line numbers to move cursor
+            # Get line numbers and white space
             (row,col) = self.view.rowcol(line.begin())
             indent_region = self.view.find('^\s+', self.view.text_point(row, 0))
             if self.view.rowcol(indent_region.begin())[0] == row:
@@ -34,25 +64,23 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
             else:
                 indent = ''
 
-            #move cursor
-
+            # Move cursor to next line
             target = self.view.text_point(row+1, col)
             self.view.sel().clear()
             self.view.sel().add(sublime.Region(target))
             self.view.show(target)
 
+
+            # Insert the quotes
             self.view.insert(edit, target, indent)
             line_conts = '"' + '"'
             self.view.insert(edit, self.view.sel()[0].begin(), line_conts)
 
-            
-           # move cursor inside quotes
 
+            # Move cursor inside quotes
             (row,col) = self.view.rowcol(self.view.sel()[0].begin())
             target = self.view.text_point(row, col-1)
             self.view.sel().clear()
             self.view.sel().add(sublime.Region(target))
             self.view.show(target)
 
-            
-            #self.view.insert(edit, self.view.text_point, line_conts)
