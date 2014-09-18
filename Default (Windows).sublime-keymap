@@ -1,5 +1,5 @@
 [
     {
-        "keys": ["ctrl+q"], "command": "multi_quotes"
+        "keys": ["ctrl+q"], "command": "multi_quote"
     }
 ]

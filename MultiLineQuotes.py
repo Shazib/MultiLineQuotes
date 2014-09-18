@@ -1,33 +1,14 @@
-"""
-import sublime, sublime_plugin
-
-
-class DuplicateLineCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        for region in self.view.sel():
-            if region.empty():
-                line = self.view.line(region)
-                line_contents = self.view.substr(line) + '\n'
-                self.view.insert(edit, line.begin(), line_contents)
-            else:
-                self.view.insert(edit, region.begin(), self.view.substr(region))
-"""
-
-import sublime, sublime_plugin
-
-import re 
-
+import sublime, sublime_plugin, re
 
 re_quotes = re.compile("^([\"])(.*)\\1$")
 
 re_singlequotes = re.compile("^(['])(.*)\\1$")
 
-class MultiQuotesCommand(sublime_plugin.TextCommand):
+class MultiQuoteCommand(sublime_plugin.TextCommand):
     def run(self, edit):
 
         # Check for quotes
         v = self.view
-        print("run")
         # Get current selection 
         (r,c) = self.view.rowcol(self.view.sel()[0].begin())
 
@@ -54,6 +35,15 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
                         print("is a single quote")
                         continue
                     if not res:
+                        # Unselect everything
+                        target = self.view.text_point(r, c)
+                        self.view.sel().clear()
+                        self.view.sel().add(sublime.Region(target))
+                        self.view.show(target)
+
+                        # Add the enter if needed
+                        cursorPos = self.view.sel()[0].begin()
+                        self.view.insert(edit, cursorPos, "\n")
                         return
 
         # Get end of cursor position
@@ -106,3 +96,23 @@ class MultiQuotesCommand(sublime_plugin.TextCommand):
             self.view.sel().clear()
             self.view.sel().add(sublime.Region(target))
             self.view.show(target)
+
+
+
+class MultiLineQuoteListener(sublime_plugin.EventListener):
+
+    def on_text_command(self, view, command, args):
+       
+        # If enter is pressed
+        print(args)
+        if "insert" in command:
+            if "{'characters': '\\n'}" in str(args):
+                # Run multi_quote
+                print("Running MultiQuote")
+                view.run_command("multi_quote")
+                # Remove the enter
+                return("insert","\n")
+
+
+
+
