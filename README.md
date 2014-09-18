@@ -51,8 +51,10 @@ myButton.setText("This is a lot of text " +
 
 ###Version Log###
 
-- **1.0.0**  _16th September 2014_
+- **0.1**  _16th September 2014_
  - First Release
-- **1.0.1** _16th September 2014_
+- **0.2** _16th September 2014_
  - Single Quote Support
+- **0.3** _18th September 2014_
+ - Enter Keypress Support
  
